@@ -1,0 +1,17 @@
+# Local infrastructure and orchestration scripts
+docker-compose.yml
+test-e2e-cluster.js
+TODO.md
+
+# Node dependencies
+node_modules/
+
+# Environment & key files
+.env
+.env.local
+*.key
+*.pem
+
+# OS metadata
+.DS_Store
+Thumbs.db
