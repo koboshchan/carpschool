@@ -1,15 +1,15 @@
 [submodule "central-server"]
 	path = central-server
-	url = https://github.com/Carpschool/central-server.git
+	url = https://github.com/kat-kobosh/central-server.git
 [submodule "school-server"]
 	path = school-server
-	url = https://github.com/Carpschool/school-server.git
+	url = https://github.com/kat-kobosh/school-server.git
 [submodule "web"]
 	path = web
-	url = https://github.com/Carpschool/web.git
+	url = https://github.com/kat-kobosh/web.git
 [submodule "ios"]
 	path = ios
-	url = https://github.com/Carpschool/ios.git
+	url = https://github.com/kat-kobosh/ios.git
 [submodule "android"]
 	path = android
-	url = https://github.com/Carpschool/android.git
+	url = https://github.com/kat-kobosh/android.git
