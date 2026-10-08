@@ -1,45 +1,16 @@
-# Mailer API contract (proposed by web, Oct 7 2026)
+# School mailer contract
+Providers smtp, gmail (Google OAuth gmail.send API), appsscript (signed/encrypted token push). Old appsscript URL relay remains readable as interim compatibility until admin switches after token confirmation.
+PUT /admin/settings mailer fields provider, fromName, gmailUser, fromEmail, clientId, clientSecret, refreshToken, smtpHost, smtpPort, smtpSecure, smtpUser, smtpPassword. Secrets nullable to remove; absent keeps. Existing url/secret compatibility retained, not offered in new UI.
+GET /admin/settings and /admin/mailer redact secret, clientSecret, refreshToken, smtpPassword, expose corresponding *Set booleans and configured. No token/private key in any ordinary GET.
+POST /admin/mailer/appsscript/generate {} rotates dedicated RSA2048 identity and HKDF generation salt; invalidates prior tokens/scripts. Returns {codeGs,appsscriptJson,keyId}. This is the ONLY HTTP operation disclosing script secrets; Cache-Control no-store. Does NOT switch mailer or change other settings.
+GET /admin/mailer/appsscript/status returns {generated,keyId,tokenSet,tokenValid,expiresAt,lastPushAt}. These endpoints require existing school-admin bearer sessions.
+PUT /admin/settings {mailer:{provider:"appsscript",appsscriptMode:"token",gmailUser:"school address"}} only after status tokenValid. New UI can select token mode automatically in save. Interim relay remains if appsscriptMode absent and URL exists.
+Public POST /mailer/appsscript/token envelope {ciphertext,iv,ts,signature}, strict JSON. Fields ciphertext/iv/signature canonical unpadded base64url; ciphertext includes trailing16-byte GCM tag, iv12 bytes, signature256 bytes; ts13-digit integer UTC epoch ms.
+RSA-SHA256 PKCS1v1.5 signs ASCII concatenation ciphertext||iv||decimal(ts), with no delimiter. Fixed IV22chars + ts13digits and ciphertext strict bounded encoding make framing unambiguous. Verify RSA before AES decrypt. AES256GCM no AAD, key HKDF-SHA256(server PKCS8 DER signing key, random32byte generation salt, info UTF8 carpschool-appsscript-aes,32). Never embed server signing key; embed only derived AES key and dedicated RSA PKCS8 private key. Server stores public key, salt, keyId in private mailer state collection.
+Encrypted UTF8 JSON {token,expiresAt,ts,nonce}; expiresAt integer ms within now+60min, >now+30seconds; ts matches envelope ±5min; nonce UUIDv4. Persistent unique nonce insert atomic, TTL >= signed timestamp acceptance window. Token state encrypted at rest under separately HKDF-derived key info carpschool-appsscript-at-rest; atomic CAS keyId prevents rotation race and monotonic ts prevents older pushes replacing newer tokens.
+Script fetches Google tokeninfo to obtain actual expires_in (ScriptApp does NOT promise 60min), checks gmail.send, advertises expiry min(actual-60sec,50min), installs one every30min trigger, pushes immediately. Trigger interruptions or short-lived tokens can cause gaps; server fails closed, no relay fallback in token mode. No logs contain token or raw errors. Generated IV uses locked persisted counter with generation-specific prefix, no Math.random.
 
-All routes school-server, AdminGuard, responses Cache-Control: no-store.
-
-## GET /admin/settings  -> mailer (sanitized view, never returns secrets)
-{
-  provider: 'smtp' | 'gmail' | 'appsscript_push' | 'appsscript' | 'test',   // 'gmail' = Google OAuth (kept for compat), 'appsscript' = legacy interim relay
-  fromName: string,
-  configured: boolean,                       // provider-specific
-  // smtp
-  smtpHost?: string, smtpPort?: number, smtpSecurity?: 'tls'|'starttls'|'none', smtpUser?: string, smtpFrom?: string, smtpPasswordSet: boolean,
-  // google oauth (unchanged)
-  gmailUser?: string, clientId?: string, clientSecretSet: boolean, refreshTokenSet: boolean,
-  // legacy relay (unchanged, interim)
-  url?: string, secretSet: boolean,
-  // token push
-  push: { keyCreatedAt: string|null, lastTokenAt: string|null, lastTokenStatus: 'never'|'ok'|'expired'|'rejected', tokenExpiresAt: string|null, lastError?: string /* short, non-secret */ }
-}
-
-## PUT /admin/settings {mailer: patch}
-Patch keys: provider, fromName, smtpHost, smtpPort, smtpSecurity, smtpUser, smtpFrom, smtpPassword (string to set | null to clear | omitted keep),
-gmailUser, clientId, clientSecret, refreshToken, url, secret (same write-only semantics as today).
-Switching provider must NOT clear other providers' stored config (legacy relay stays usable until push works).
-
-## POST /admin/mailer/appsscript/generate  body {regenerate?: boolean}
-- No key yet: creates RSA2048 keypair + dedicated secrets, returns 200 {code: string, manifest: string, keyCreatedAt: string}
-- Key exists and regenerate !== true: 409 {error:'KEY_EXISTS'}
-- regenerate === true: rotates key, invalidates old script, returns 200 as above.
-- Re-showing an existing script without rotating is NOT supported (secrets only in the explicit generate response). No GET for code.
-- code = minified Code.gs (HKDF-AES256GCM, RSA2048, no server signing key), manifest = minified appsscript.json.
-
-## GET /admin/mailer/appsscript/status -> push object above (for polling every ~10s while tab open)
-
-
-
-## UPDATE: Mode 2 = central-broker Google OAuth (supersedes "gmail" as the new flow)
-School UI never shows/stores Google client ID/secret/refresh token for the new flow.
-- provider value: 'google'. Legacy 'gmail' (school-held OAuth) and 'appsscript' relay stay readable/usable until migrations; UI only offers them when currently saved.
-- GET /admin/settings mailer.google: { email: string|null, status: 'connected'|'disconnected'|'error', connectedAt?: string|null, lastRefreshAt?: string|null, error?: string /* short, non-secret */ }
-- POST /admin/mailer/google/connect {returnPath: '/admin/school?tab=mailer'} -> 200 {url: 'https://...'}  (school signs request to central; url is central's OAuth start; browser navigates there)
-  After consent central redirects to <school web origin><returnPath>&mailer=connected|error. Web only accepts https url; returnPath must be server-validated as same-origin relative path.
-- POST /admin/mailer/google/disconnect {} -> 200; revokes at central.
-- Token refresh entirely school<->central; web just displays status.
-- Sentinel: will use appsscript_push (district blocks OAuth).
-
+## UPDATE: no client credentials in any UI
+Central Google client id/secret are env-only (no DB, no admin UI). Mailer UI has no client ID/secret/refresh-token inputs at all.
+Legacy 'gmail' is shown read-only (gmailUser only); saving it sends only {provider, fromName}, so stored legacy creds stay untouched until migration.
+School settings view no longer needs clientId/clientSecretSet/refreshTokenSet (web ignores them).
