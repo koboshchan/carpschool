@@ -31,3 +31,7 @@ Central Google broker callback target https://api.carpschool.ca/mailer/google/ca
 - POST /admin/mailer/google/connect -> {url}  NO BODY; backend uses allowlisted request Origin; callback /admin/school?mailer=connected|error
 - GET  /admin/mailer/google/status  -> {connected, email, expiresAt}
 - POST /admin/mailer/google/disconnect
+
+Google disconnect response
+
+POST /admin/mailer/google/disconnect deletes local Google mailer state before contacting the broker. Returns {ok:true,localDisconnected:true,revocation}, where revocation is revoked after a verified signed acknowledgement, unconfirmed on central/Google failure, or not_required without a stored refresh token. Unconfirmed does not retain locally usable tokens or disclose upstream details; it does not assert that the Google grant was revoked.
