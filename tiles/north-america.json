@@ -1,0 +1,24 @@
+{
+  "options": {
+    "paths": {
+      "fonts": "/data/fonts",
+      "sprites": "/build/style",
+      "styles": "/build/style"
+    }
+  },
+  "styles": {
+    "positron": {
+      "style": "style.json",
+      "serve_rendered": false
+    },
+    "OSM OpenMapTiles": {
+      "style": "style.json",
+      "serve_rendered": false
+    }
+  },
+  "data": {
+    "openmaptiles": {
+      "mbtiles": "/data/tiles.mbtiles"
+    }
+  }
+}
