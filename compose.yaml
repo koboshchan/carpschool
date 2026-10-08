@@ -46,12 +46,16 @@ services:
     networks: [public, tiles, carpschool_bridge]
     depends_on: [tiles]
     restart: unless-stopped
-  # Self-hosted OpenMapTiles vector tiles. No published port: only the web app reaches it (proxied at /tiles).
+  # North America dataset stays read-only on the existing D: drive.
   tiles:
     image: maptiler/tileserver-gl:latest
-    command: [--config, /data/config.json, --port, "8080"]
-    volumes: ["${TILES_DIR:-./tiles}:/data:ro"]
-    networks: [tiles]
+    command: [--config, /config/north-america.json, --port, "8080"]
+    volumes:
+      - "D:/Carpool/openmaptilesdata/data:/data:ro"
+      - "D:/Carpool/openmaptilesdata/style:/style:ro"
+      - "D:/Carpool/openmaptilesdata/build:/build:ro"
+      - "./tiles/north-america.json:/config/north-america.json:ro"
+    networks: [tiles, carpschool_bridge]
     restart: unless-stopped
 networks:
   carpschool_bridge: {external: true}
