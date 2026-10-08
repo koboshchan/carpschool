@@ -34,6 +34,19 @@ services:
     depends_on:
       mongo: {condition: service_healthy}
     restart: unless-stopped
+  school-kjt:
+    image: carpschool-prod-school
+    container_name: carpschool-prod-school-kjt-1
+    env_file: ./school-server/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/carpschool_school_kjt?replicaSet=rs0
+      PORT: 5000
+      SIGNING_KEY_PATH: /run/signing/school-signing.pem
+    volumes: ["./data/school-kjt:/app/data"]
+    networks: [database, public, carpschool_bridge]
+    depends_on:
+      mongo: {condition: service_healthy}
+    restart: unless-stopped
   web:
     build:
       context: ./web
