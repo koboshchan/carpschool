@@ -58,7 +58,8 @@ services:
     networks: [tiles, carpschool_bridge]
     restart: unless-stopped
 networks:
-  carpschool_bridge: {external: true}
+  carpschool_bridge:
+    name: carpschool_bridge
   tiles:
     internal: true
   database:
