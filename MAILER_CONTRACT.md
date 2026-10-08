@@ -31,3 +31,15 @@ Switching provider must NOT clear other providers' stored config (legacy relay s
 
 ## GET /admin/mailer/appsscript/status -> push object above (for polling every ~10s while tab open)
 
+
+
+## UPDATE: Mode 2 = central-broker Google OAuth (supersedes "gmail" as the new flow)
+School UI never shows/stores Google client ID/secret/refresh token for the new flow.
+- provider value: 'google'. Legacy 'gmail' (school-held OAuth) and 'appsscript' relay stay readable/usable until migrations; UI only offers them when currently saved.
+- GET /admin/settings mailer.google: { email: string|null, status: 'connected'|'disconnected'|'error', connectedAt?: string|null, lastRefreshAt?: string|null, error?: string /* short, non-secret */ }
+- POST /admin/mailer/google/connect {returnPath: '/admin/school?tab=mailer'} -> 200 {url: 'https://...'}  (school signs request to central; url is central's OAuth start; browser navigates there)
+  After consent central redirects to <school web origin><returnPath>&mailer=connected|error. Web only accepts https url; returnPath must be server-validated as same-origin relative path.
+- POST /admin/mailer/google/disconnect {} -> 200; revokes at central.
+- Token refresh entirely school<->central; web just displays status.
+- Sentinel: will use appsscript_push (district blocks OAuth).
+
