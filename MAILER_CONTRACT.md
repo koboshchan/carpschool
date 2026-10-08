@@ -28,6 +28,6 @@ Public POST /mailer/appsscript/iv accepts {keyId,ts,nonce,signature}. RSA-SHA256
 Central Google broker callback target https://api.carpschool.ca/mailer/google/callback. Broker implementation is pending, do not assume this route is deployed. Proposed school UI endpoints POST /admin/mailer/google/connect -> {url}, GET /admin/mailer/google/status -> {connected,email,expiresAt}, POST /admin/mailer/google/disconnect -> {ok:true}. No client-credential inputs; legacy gmail configuration preserved until explicit migration.
 
 ## Google (actual, per backend, supersedes mailer.google above)
-- POST /admin/mailer/google/connect -> {url}  (UI sends {returnPath:'/admin/school?tab=mailer'}; backend acceptance of returnPath UNCONFIRMED)
+- POST /admin/mailer/google/connect -> {url}  NO BODY; backend uses allowlisted request Origin; callback /admin/school?mailer=connected|error
 - GET  /admin/mailer/google/status  -> {connected, email, expiresAt}
 - POST /admin/mailer/google/disconnect
