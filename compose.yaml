@@ -2,7 +2,7 @@ services:
   mongo:
     image: mongo:8
     command: [mongod, --replSet, rs0, --bind_ip_all]
-    volumes: [mongo-data:/data/db]
+    volumes: [./data/mongo:/data/db]
     networks: [database]
     healthcheck:
       test: [CMD-SHELL, 'mongosh --quiet --eval "try { rs.status() } catch(e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]}) }"']
@@ -17,9 +17,8 @@ services:
       MONGO_URI: mongodb://mongo:27017/carpschool_central?replicaSet=rs0
       PORT: 3101
       SIGNING_KEY_FILE: /run/signing/central-signing.pem
-    volumes: ["${SIGNING_KEYS_DIR:-./keys}:/run/signing:ro"]
-    ports: ["127.0.0.1:41871:3101"]
-    networks: [database, public]
+    volumes: ["./data/central:/app/data"]
+    networks: [database, public, carpschool_bridge]
     depends_on:
       mongo: {condition: service_healthy}
     restart: unless-stopped
@@ -27,22 +26,24 @@ services:
     build: ./school-server
     env_file: ./school-server/.env
     environment:
-      MONGO_URI: mongodb://mongo:27017/carpschool_school_kjt?replicaSet=rs0
+      MONGO_URI: mongodb://mongo:27017/carpschool_school_sss?replicaSet=rs0
       PORT: 5000
       SIGNING_KEY_PATH: /run/signing/school-signing.pem
-    volumes: ["${SIGNING_KEYS_DIR:-./keys}:/run/signing:ro"]
-    ports: ["127.0.0.1:41872:5000"]
-    networks: [database, public]
+    volumes: ["./data/school:/app/data"]
+    networks: [database, public, carpschool_bridge]
     depends_on:
       mongo: {condition: service_healthy}
     restart: unless-stopped
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_CENTRAL_SERVER_URL: https://api.carpschool.ca
     env_file: ./web/.env
     environment:
       TILESERVER_URL: http://tiles:8080
-    ports: ["127.0.0.1:43817:3000"]
-    networks: [public, tiles]
+    networks: [public, tiles, carpschool_bridge]
     depends_on: [tiles]
     restart: unless-stopped
   # Self-hosted OpenMapTiles vector tiles. No published port: only the web app reaches it (proxied at /tiles).
@@ -53,10 +54,9 @@ services:
     networks: [tiles]
     restart: unless-stopped
 networks:
+  carpschool_bridge: {external: true}
   tiles:
     internal: true
   database:
     internal: true
   public: {}
-volumes:
-  mongo-data: {}
