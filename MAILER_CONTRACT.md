@@ -14,3 +14,8 @@ Script fetches Google tokeninfo to obtain actual expires_in (ScriptApp does NOT 
 Central Google client id/secret are env-only (no DB, no admin UI). Mailer UI has no client ID/secret/refresh-token inputs at all.
 Legacy 'gmail' is shown read-only (gmailUser only); saving it sends only {provider, fromName}, so stored legacy creds stay untouched until migration.
 School settings view no longer needs clientId/clientSecretSet/refreshTokenSet (web ignores them).
+
+## UPDATE: actual backend Apps Script contract (per backend, web adapted)
+POST /admin/mailer/appsscript/generate {regenerate?} -> {codeGs, appsscriptJson, keyId}; 409 when key exists and regenerate!==true; no-store.
+GET /admin/mailer/appsscript/status -> {generated, keyId, tokenSet, tokenValid, expiresAt, lastPushAt}.
+Settings view mailer.push no longer used by web.
