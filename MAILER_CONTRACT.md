@@ -35,3 +35,5 @@ Central Google broker callback target https://api.carpschool.ca/mailer/google/ca
 Google disconnect response
 
 POST /admin/mailer/google/disconnect deletes local Google mailer state before contacting the broker. Returns {ok:true,localDisconnected:true,revocation}, where revocation is revoked after a verified signed acknowledgement, unconfirmed on central/Google failure, or not_required without a stored refresh token. Unconfirmed does not retain locally usable tokens or disclose upstream details; it does not assert that the Google grant was revoked.
+
+Revocation retry limitation: unconfirmed means local credentials are deleted but global Google revocation is NOT confirmed. Neither school nor central retains an encrypted revocation queue; there is no automatic or API retry after local deletion. A repeated Disconnect returns not_required because no local grant remains; this does not confirm the original grant was revoked. The account owner can revoke the remaining grant from Google Account permissions. No background retry or globally revoked claim is implied.
