@@ -18,7 +18,8 @@ Thumbs.db
 
 data/
 keys/
-tiles/
+tiles/*
+!tiles/Dockerfile
 central-data/
 school-data/
 docker-config/

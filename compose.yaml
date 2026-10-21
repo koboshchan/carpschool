@@ -61,7 +61,7 @@ services:
     restart: unless-stopped
   # North America dataset stays read-only on the existing D: drive.
   tiles:
-    image: maptiler/tileserver-gl:latest
+    build: ./tiles
     command: [--config, /config/north-america.json, --port, "8080"]
     volumes:
       - "D:/Carpool/openmaptilesdata/data:/data:ro"
